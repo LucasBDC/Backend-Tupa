@@ -21,6 +21,17 @@ def update_user(user_id: int, user_data: UserCreate, db: Session = Depends(get_d
     user_service = UserService(db)
     return user_service.update_user(user_id, user_data)
 
+def deactivate_user(user_id: int, db: Session = Depends(get_db)):
+    user_service = UserService(db)
+    user_service.deactivate_user(user_id)
+    return {"detail": "User deactivated successfully"}
+
+@router.patch("/users/{user_id}/activate", response_model=dict)
+def activate_user(user_id: int, db: Session = Depends(get_db)):
+    user_service = UserService(db)
+    user_service.activate_user(user_id)
+    return {"detail": "User activated successfully"}
+
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     user_service = UserService(db)

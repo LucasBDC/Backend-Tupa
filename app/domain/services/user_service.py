@@ -50,6 +50,26 @@ class UserService:
         self.db.refresh(user)
 
         return user
+    
+    def deactivate_user(self, user_id: int):
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+        user.is_active = False
+        self.db.commit()
+        self.db.refresh(user)
+    
+    # Ativar usuário
+    def activate_user(self, user_id: int):
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+        user.is_active = True
+        self.db.commit()
+        self.db.refresh(user)
+
 
     def delete_user(self, user_id: int):
         user = self.db.query(User).filter(User.id == user_id).first()

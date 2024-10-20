@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DECIMAL, Enum, ForeignKey
+from sqlalchemy.orm import relationship
 from app.infrastructure.database.db import Base
 import enum
 
@@ -15,3 +16,7 @@ class Category(Base):
     planned_amount = Column(DECIMAL(10, 2), nullable=False)
     remaining_amount = Column(DECIMAL(10, 2), nullable=False)
     period = Column(Enum(CategoryPeriod), nullable=False)
+
+    user = relationship("User", back_populates="categories")
+    purchases = relationship("Purchase", back_populates="category") 
+    installments = relationship("Installment", back_populates="category") 
