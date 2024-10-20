@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from app.infrastructure.database.db import get_db
 from app.domain.models.user import UserCreate, UserRead
 from app.domain.services.user_service import UserService
+from fastapi.security import OAuth2PasswordBearer
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 router = APIRouter()
 
@@ -11,28 +14,31 @@ def create_user(user_data: UserCreate, db: Session = Depends(get_db)):
     user_service = UserService(db)
     return user_service.create_user(user_data)
 
-@router.get("/users/{user_id}", response_model=UserRead)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+@router.get("/me", response_model=UserRead)
+def get_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     user_service = UserService(db)
-    return user_service.get_user_by_id(user_id)
+    current_user = user_service.get_current_user(db, token)
+    return user_service.get_user(current_user)
 
-@router.put("/users/{user_id}", response_model=UserRead)
-def update_user(user_id: int, user_data: UserCreate, db: Session = Depends(get_db)):
+@router.put("/me", response_model=UserRead)
+def update_user(user_data: UserCreate, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     user_service = UserService(db)
-    return user_service.update_user(user_id, user_data)
+    current_user = user_service.get_current_user(db, token)
+    return user_service.update_user(user_data, current_user)
 
-def deactivate_user(user_id: int, db: Session = Depends(get_db)):
+@router.delete("/me")
+def delete_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     user_service = UserService(db)
-    user_service.deactivate_user(user_id)
-    return {"detail": "User deactivated successfully"}
+    current_user = user_service.get_current_user(db, token)
+    return user_service.delete_user(current_user)
 
-@router.patch("/users/{user_id}/activate", response_model=dict)
+@router.patch("/me/deactivate")
+def deactivate_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    user_service = UserService(db)
+    current_user = user_service.get_current_user(db, token)
+    return user_service.deactivate_user(current_user)
+
+@router.patch("/users/{user_id}/activate")
 def activate_user(user_id: int, db: Session = Depends(get_db)):
     user_service = UserService(db)
-    user_service.activate_user(user_id)
-    return {"detail": "User activated successfully"}
-
-@router.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db)):
-    user_service = UserService(db)
-    return user_service.delete_user(user_id)
+    return user_service.activate_user(user_id)
