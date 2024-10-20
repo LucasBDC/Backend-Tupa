@@ -2,6 +2,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import Depends
 from app.domain.services.automatic_purchase_service import AutomaticPurchaseService
 from app.domain.services.category_service import CategoryService
+from app.domain.services.subscription_service import SubscriptionService
 from app.infrastructure.database.db import SessionLocal, get_db
 from sqlalchemy.orm import Session
 
@@ -24,11 +25,17 @@ def reset_weekly_categories():
 def process_scheduled_purchases(db: Session = Depends(get_db)):
     automatic_purchase_service = AutomaticPurchaseService(db)
     automatic_purchase_service.process_automatic_purchases()
+    
+def process_due_subscriptions(db: Session = Depends(get_db)):
+    subscription_service = SubscriptionService(db)
+    subscription_service.process_due_subscriptions()
+
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
     scheduler.add_job(process_scheduled_purchases, 'interval', days=1)
     scheduler.add_job(reset_monthly_categories, 'cron', day=1, hour=0, minute=0)
     scheduler.add_job(reset_weekly_categories, 'cron', day_of_week='mon', hour=0, minute=0)
+    scheduler.add_job(process_due_subscriptions, 'interval', days=1)
     scheduler.start()
     return scheduler
